@@ -1,13 +1,10 @@
---dokidoki_disable_debug = true
-require 'dokidoki.module' [[]]
+require 'dokidoki.module'
+[[ init ]]
 
 import(require 'gl')
 import(require 'glu')
-import(require 'dokidoki.base')
 
-local actor_scene = require 'dokidoki.actor_scene'
 local collision = require 'collision'
-local kernel = require 'dokidoki.kernel'
 local v2 = require 'dokidoki.v2'
 
 local constants = require 'constants'
@@ -54,16 +51,9 @@ function init (game)
 
   game.add_actor(util.make_following_camera(game, player))
 
-  for i = 1, 100 do
+  for i = 1, 10 do
     game.add_actor(entities.make_pyx(game, player, v2(math.random(100, 300), math.random(100, 300))))
   end
 end
 
----- Init ---------------------------------------------------------------------
-
-kernel.set_video_mode(constants.width, constants.height)
-kernel.set_ratio(constants.width/constants.height)
-kernel.start_main_loop(actor_scene.make_actor_scene(
-  {'pre_update', 'update', 'collision_check', 'post_update'},
-  {'draw_setup', 'draw_terrain', 'draw'},
-  init))
+return get_module_exports()
