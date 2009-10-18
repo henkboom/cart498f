@@ -1,9 +1,14 @@
 require 'dokidoki.module'
-[[ load_level ]]
+[[ add_area ]]
 
 import 'gl'
+import 'dokidoki.base'
 
+local collision = require 'collision'
 local v2 = require 'dokidoki.v2'
+
+local constants = require 'constants'
+local entities = require 'entities'
 
 function load_level(game, level)
   local level_handlers =
@@ -19,6 +24,98 @@ function load_level(game, level)
   end
 end
 
+function add_area (game, pos, x_cells, y_cells)
+  local cells = {}
+  local edges = {}
+
+  for i = 1, x_cells do
+    cells[i] = {}
+    for j = 1, y_cells do
+      cells[i][j] = {'wall', 'wall', 'wall', 'wall'}
+      if i ~= 1 then
+        table.insert(edges, {cells[i-1][j], cells[i][j], orientation=1})
+      end
+      if j ~= 1 then
+        table.insert(edges, {cells[i][j-1], cells[i][j], orientation=2})
+      end
+    end
+  end
+
+  for edge in iterate_passages(edges) do
+    edge[1][edge.orientation] = 'door'
+    edge[2][edge.orientation + 2] = 'door'
+  end
+
+  for i = 1, x_cells do
+    for j = 1, y_cells do
+      add_room(game,
+               pos + v2((i-1) * constants.room_width,
+                        (j-1) * constants.room_height),
+               cells[i][j]);
+    end
+  end
+end
+
+vert_wall = collision.make_rectangle(64, constants.room_height + 64)
+horiz_wall = collision.make_rectangle(constants.room_width + 64, 64)
+
+function add_room(game, pos, sides)
+  local rw = constants.room_width
+  local rh = constants.room_height
+
+  local pyx_count = math.random(-4, 0);
+
+  if(sides[1] == 'wall') then
+    game.add_actor(make_obstacle(game, pos + v2(rw, rh/2), 0, vert_wall))
+    pyx_count = pyx_count + 2
+  end
+  if(sides[2] == 'wall') then
+    game.add_actor(make_obstacle(game, pos + v2(rw/2, rh), 0, horiz_wall))
+    pyx_count = pyx_count + 2
+  end
+  if(sides[3] == 'wall') then
+    game.add_actor(make_obstacle(game, pos + v2(0, rh/2), 0, vert_wall))
+    pyx_count = pyx_count + 2
+  end
+  if(sides[4] == 'wall') then
+    game.add_actor(make_obstacle(game, pos + v2(rw/2, 0), 0, horiz_wall))
+    pyx_count = pyx_count + 2
+  end
+
+  for i = 1, pyx_count do
+    game.add_actor(entities.make_pyx(
+      game,
+      pos + v2(math.random(rw/3, 2*rw/3), math.random(rh/3, 2*rh/3))))
+  end
+end
+
+function iterate_passages(edges)
+  local node_groups = {}
+  edges = irandomize(edges)
+  local i = 1
+
+  return function ()
+    local edge
+
+    repeat
+      if i > #edges then return nil end
+      edge = edges[i]
+      i = i + 1
+      node_groups[edge[1]] = node_groups[edge[1]] or {edge[1]}
+      node_groups[edge[2]] = node_groups[edge[2]] or {edge[2]}
+    until node_groups[edge[1]] ~= node_groups[edge[2]]
+
+    local union = iconcat(node_groups[edge[1]], node_groups[edge[2]])
+    for _, node in ipairs(union) do
+      node_groups[node] = union
+    end
+
+    assert(node_groups[edge[1]] == node_groups[edge[2]])
+
+    return edge
+  end
+end
+
 function make_obstacle (game, pos, angle, poly)
   local self = {}
   self.pos = pos
@@ -27,7 +124,7 @@ function make_obstacle (game, pos, angle, poly)
   self.tags = {'obstacle'}
 
   function self.draw()
-    glColor3d(0.9, 0.9, 0.9)
+    glColor3d(1, 1, 1)
     glBegin(GL_POLYGON)
     for _, v in ipairs(self.poly.vertices) do
       glVertex2d(v.x, v.y)

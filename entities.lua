@@ -15,26 +15,37 @@ function make_player(game, controller)
   self.pos = v2(150, 150)
   self.angle = 0
   self.poly = collision.make_rectangle(6, 6)
-  self.tags = {'entity'}
-  local vel = v2(0, 0)
+  self.tags = {'player', 'entity'}
 
+  local vel = v2(0, 0)
   local buffered_movement = v2(0, 0)
+  local weapon = false;
 
   function self.update()
-    vel = vel * 0.8 + (controller.movement * 5) * 0.2
+    if not weapon then
+      weapon = weapon or make_weapon(game, self, controller)
+      game.add_actor(weapon)
+    end
+
+    vel = vel * 0.85 + (controller.movement * 5) * 0.15
     self.pos = self.pos + vel
   end
 
   function self.handle_collision(norm)
+    if v2.dot(vel, norm) < 0 then
+      vel = vel - v2.project(vel, norm)
+    end
   end
 
   function self.draw()
+    glColor3d(1, 1, 1)
     glBegin(GL_QUADS)
     glVertex2d(-3, -3)
     glVertex2d( 3, -3)
     glVertex2d( 3,  3)
     glVertex2d(-3,  3)
     glEnd()
+    glColor3d(1, 1, 1)
   end
 
   return self
@@ -47,6 +58,8 @@ function make_weapon(game, owner, controller)
 
   local cooldown = 0
 
+  local owner_last_pos = owner.pos
+
   function self.update()
     if cooldown > 0 then cooldown = cooldown - 1 end
 
@@ -55,10 +68,14 @@ function make_weapon(game, owner, controller)
     else
       aim = v2.norm(aim * 0.8 + controller.aim * 0.2)
     end
+
     if aim ~= v2.zero and cooldown == 0 then
-      game.add_actor(make_bullet(game, owner.pos, aim * 10))
+      game.add_actor(make_bullet(game, owner.pos,
+                                 owner.pos - owner_last_pos + aim * 10))
       cooldown = cooldown + 5
     end
+
+    owner_last_pos = owner.pos
   end
 
   return self
@@ -86,12 +103,14 @@ function make_bullet(game, pos_, vel)
   end
 
   function self.draw()
+    glColor3d(1, 1, 1)
     glBegin(GL_QUADS)
     glVertex2d(-2, -2)
     glVertex2d( 2, -2)
     glVertex2d( 2,  2)
     glVertex2d(-2,  2)
     glEnd()
+    glColor3d(1, 1, 1)
   end
 
   return self
@@ -124,13 +143,16 @@ function make_player_controller(game)
 end
 
 ---- Pyxes --------------------------------------------------------------------
-function make_pyx (game, player, pos_)
+function make_pyx (game, pos_)
   local self = {}
   
   self.pos = pos_
   self.angle = 0
   self.poly = collision.make_rectangle(2, 2)
   self.tags = {'entity'}
+
+  -- TODO: do this in update once it's cheap
+  local player = game.get_actors_by_tag('player')[1]
 
   local vel = v2(0, 0)
   local follow = nil
@@ -154,15 +176,20 @@ function make_pyx (game, player, pos_)
   end
 
   function self.draw()
+    glColor3d(1, 1, 1)
     glBegin(GL_QUADS)
-    glVertex2d(-1, -1)
-    glVertex2d( 1, -1)
-    glVertex2d( 1,  1)
-    glVertex2d(-1,  1)
+    glVertex2d(-math.random(0, 1), -math.random(0, 1))
+    glVertex2d( math.random(0, 1), -math.random(0, 1))
+    glVertex2d( math.random(0, 1),  math.random(0, 1))
+    glVertex2d(-math.random(0, 1),  math.random(0, 1))
     glEnd()
+    glColor3d(1, 1, 1)
   end
 
-  function self.handle_collision()
+  function self.handle_collision(norm)
+    if v2.dot(vel, norm) < 0 then
+      vel = vel - 1.5 * v2.project(vel, norm)
+    end
   end
 
   return self
