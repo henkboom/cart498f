@@ -6,13 +6,14 @@ import 'gl'
 local collision = require 'collision'
 local v2 = require 'dokidoki.v2'
 
+local constants = require 'constants'
 local util = require 'util'
 
 ---- Player -------------------------------------------------------------------
 function make_player(game, controller)
   local self = {}
 
-  self.pos = v2(150, 150)
+  self.pos = v2(constants.room_width * 2.5, constants.room_height/2)
   self.angle = 0
   self.poly = collision.make_rectangle(6, 6)
   self.tags = {'player', 'entity'}
@@ -151,37 +152,61 @@ function make_pyx (game, pos_)
   self.poly = collision.make_rectangle(2, 2)
   self.tags = {'entity'}
 
-  -- TODO: do this in update once it's cheap
-  local player = game.get_actors_by_tag('player')[1]
-
   local vel = v2(0, 0)
-  local follow = nil
+  local follow = false
+  local excited_counter = 0
 
   function self.update()
-    local displacement = player.pos - self.pos
-    if v2.sqrmag(displacement) < 30 * 30 then
-      follow = player
+    local player = game.get_actors_by_tag('player')[1]
+    local force_follow = false
+
+    excited_counter = math.max(0, excited_counter - 1)
+
+    if player then
+      local displacement = player.pos - self.pos
+      if v2.sqrmag(displacement) < 30 * 30 then
+        if not follow then
+          follow = player
+          force_follow = true
+        end
+        excited_counter = 10
+      end
     end
 
-    vel = vel + util.random_v2() * (v2.mag(vel) / 4 + 0.05)
+    vel = vel + util.random_v2() * (v2.mag(vel) / 3 + 0.05)
     if follow then
       local displacement = follow.pos - self.pos - vel * 10
       local sqr_dist = v2.sqrmag(displacement)
-      if 20 * 20 < sqr_dist then
-        vel = vel + displacement * 0.05
+      if 100 * 100 < sqr_dist then
+        follow = false
+        excited_counter = 30
+      elseif force_follow or 70 * 70 < sqr_dist then
+        vel = vel + displacement * 0.02
       end
     end
     vel = vel * 0.98
+
+    if v2.sqrmag(vel) > 10 * 10 then
+      vel = vel / v2.mag(vel) * 10
+    end
+
     self.pos = self.pos + vel
   end
 
   function self.draw()
+    local min_size = 0
+    local max_size = 1 + excited_counter/10
+
     glColor3d(1, 1, 1)
     glBegin(GL_QUADS)
-    glVertex2d(-math.random(0, 1), -math.random(0, 1))
-    glVertex2d( math.random(0, 1), -math.random(0, 1))
-    glVertex2d( math.random(0, 1),  math.random(0, 1))
-    glVertex2d(-math.random(0, 1),  math.random(0, 1))
+    glVertex2d(-math.random(min_size, max_size),
+               -math.random(min_size, max_size))
+    glVertex2d( math.random(min_size, max_size),
+               -math.random(min_size, max_size))
+    glVertex2d( math.random(min_size, max_size),
+                math.random(min_size, max_size))
+    glVertex2d(-math.random(min_size, max_size),
+                math.random(min_size, max_size))
     glEnd()
     glColor3d(1, 1, 1)
   end

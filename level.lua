@@ -59,27 +59,45 @@ end
 vert_wall = collision.make_rectangle(64, constants.room_height + 64)
 horiz_wall = collision.make_rectangle(constants.room_width + 64, 64)
 
+vert_half_wall = collision.make_rectangle(64, constants.room_height / 2)
+horiz_half_wall = collision.make_rectangle(constants.room_width / 2, 64)
+
+function add_wall(game, pos, type, orientation)
+  local rw = constants.room_width
+  local rh = constants.room_height
+
+  if type == 'wall' then
+    if orientation == 'horiz' then
+      game.add_actor(make_obstacle(game, pos, 0, horiz_wall))
+    else
+      game.add_actor(make_obstacle(game, pos, 0, vert_wall))
+    end
+  elseif type == 'door' then
+    if orientation == 'horiz' then
+      game.add_actor(make_obstacle(game, pos-v2(rw/4+64,0), 0, horiz_half_wall))
+      game.add_actor(make_obstacle(game, pos+v2(rw/4+64,0), 0, horiz_half_wall))
+    else
+      game.add_actor(make_obstacle(game, pos-v2(0,rh/4+64), 0, vert_half_wall))
+      game.add_actor(make_obstacle(game, pos+v2(0,rh/4+64), 0, vert_half_wall))
+    end
+  else
+    error('unrecognized wall type "' .. type .. '"')
+  end
+end
+
 function add_room(game, pos, sides)
   local rw = constants.room_width
   local rh = constants.room_height
 
   local pyx_count = math.random(-4, 0);
 
-  if(sides[1] == 'wall') then
-    game.add_actor(make_obstacle(game, pos + v2(rw, rh/2), 0, vert_wall))
-    pyx_count = pyx_count + 2
-  end
-  if(sides[2] == 'wall') then
-    game.add_actor(make_obstacle(game, pos + v2(rw/2, rh), 0, horiz_wall))
-    pyx_count = pyx_count + 2
-  end
-  if(sides[3] == 'wall') then
-    game.add_actor(make_obstacle(game, pos + v2(0, rh/2), 0, vert_wall))
-    pyx_count = pyx_count + 2
-  end
-  if(sides[4] == 'wall') then
-    game.add_actor(make_obstacle(game, pos + v2(rw/2, 0), 0, horiz_wall))
-    pyx_count = pyx_count + 2
+  add_wall(game, pos + v2(rw, rh/2), sides[1], 'vert')
+  add_wall(game, pos + v2(rw/2, rh), sides[2], 'horiz')
+  add_wall(game, pos + v2(0, rh/2), sides[3], 'vert')
+  add_wall(game, pos + v2(rw/2, 0), sides[4], 'horiz')
+
+  for i = 1, 4 do
+    if sides[i] == 'wall' then pyx_count = pyx_count + 2 end
   end
 
   for i = 1, pyx_count do
