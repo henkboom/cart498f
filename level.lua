@@ -56,15 +56,16 @@ function add_area (game, pos, x_cells, y_cells)
   end
 end
 
-vert_wall = collision.make_rectangle(64, constants.room_height + 64)
-horiz_wall = collision.make_rectangle(constants.room_width + 64, 64)
+vert_wall = collision.make_rectangle(constants.wall_thickness, constants.room_height + constants.wall_thickness)
+horiz_wall = collision.make_rectangle(constants.room_width + constants.wall_thickness, constants.wall_thickness)
 
-vert_half_wall = collision.make_rectangle(64, constants.room_height / 2)
-horiz_half_wall = collision.make_rectangle(constants.room_width / 2, 64)
+vert_half_wall = collision.make_rectangle(constants.wall_thickness, constants.room_height / 2 - constants.wall_thickness)
+horiz_half_wall = collision.make_rectangle(constants.room_width / 2 - constants.wall_thickness, constants.wall_thickness)
 
 function add_wall(game, pos, type, orientation)
   local rw = constants.room_width
   local rh = constants.room_height
+  local wt = constants.wall_thickness
 
   if type == 'wall' then
     if orientation == 'horiz' then
@@ -74,11 +75,15 @@ function add_wall(game, pos, type, orientation)
     end
   elseif type == 'door' then
     if orientation == 'horiz' then
-      game.add_actor(make_obstacle(game, pos-v2(rw/4+64,0), 0, horiz_half_wall))
-      game.add_actor(make_obstacle(game, pos+v2(rw/4+64,0), 0, horiz_half_wall))
+      game.add_actor(
+        make_obstacle(game, pos-v2(rw/4+wt/2,0), 0, horiz_half_wall))
+      game.add_actor(
+        make_obstacle(game, pos+v2(rw/4+wt/2,0), 0, horiz_half_wall))
     else
-      game.add_actor(make_obstacle(game, pos-v2(0,rh/4+64), 0, vert_half_wall))
-      game.add_actor(make_obstacle(game, pos+v2(0,rh/4+64), 0, vert_half_wall))
+      game.add_actor(
+        make_obstacle(game, pos-v2(0,rh/4+wt/2), 0, vert_half_wall))
+      game.add_actor(
+        make_obstacle(game, pos+v2(0,rh/4+wt/2), 0, vert_half_wall))
     end
   else
     error('unrecognized wall type "' .. type .. '"')
@@ -95,6 +100,7 @@ function add_room(game, pos, sides)
   add_wall(game, pos + v2(rw/2, rh), sides[2], 'horiz')
   add_wall(game, pos + v2(0, rh/2), sides[3], 'vert')
   add_wall(game, pos + v2(rw/2, 0), sides[4], 'horiz')
+  game.add_actor(make_floor_actor(game, pos, game.resources.room_backgrounds[1]))
 
   for i = 1, 4 do
     if sides[i] == 'wall' then pyx_count = pyx_count + 2 end
@@ -105,6 +111,7 @@ function add_room(game, pos, sides)
       game,
       pos + v2(math.random(rw/3, 2*rw/3), math.random(rh/3, 2*rh/3))))
   end
+  game.add_actor(entities.make_void(game, pos + v2(rw/2, rh/2)))
 end
 
 function iterate_passages(edges)
@@ -134,6 +141,17 @@ function iterate_passages(edges)
   end
 end
 
+function make_floor_actor(game, pos, sprite)
+  local self = {}
+  self.pos = pos
+
+  function self.draw_terrain()
+    sprite:draw()
+  end
+
+  return self
+end
+
 function make_obstacle (game, pos, angle, poly)
   local self = {}
   self.pos = pos
@@ -142,7 +160,7 @@ function make_obstacle (game, pos, angle, poly)
   self.tags = {'obstacle'}
 
   function self.draw()
-    glColor3d(1, 1, 1)
+    glColor3d(0, 0, 0)
     glBegin(GL_POLYGON)
     for _, v in ipairs(self.poly.vertices) do
       glVertex2d(v.x, v.y)

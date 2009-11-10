@@ -18,14 +18,15 @@ function init (game)
   -- so we have to do it here
   math.randomseed(os.time())
 
+  game.resources = require 'resources'
+
   local obstacle_index
 
   game.add_actor{
     pre_update = function ()
     end,
     collision_check = function ()
-      local entities = game.get_actors_by_tag('entity')
-      for _, e in ipairs(entities) do
+      for _, e in ipairs(game.get_actors_by_tag('entity')) do
         for _, o in ipairs(obstacle_index.lookup(e.pos)) do
           local correction = collision.collide(e, o)
           if correction then
@@ -34,9 +35,24 @@ function init (game)
           end
         end
       end
+      for _, e in ipairs(game.get_actors_by_tag('enemy')) do
+        for _, b in ipairs(game.get_actors_by_tag('player_bullet')) do
+          local correction = collision.collide(e, b)
+          if correction then
+            e.hit()
+            b.hit()
+          end
+        end
+      end
     end,
 
     draw_setup = util.gl_setup,
+    draw_glow = function ()
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+    end,
+    draw_terrain = function ()
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    end,
   }
 
   local player_controller = entities.make_player_controller(game)

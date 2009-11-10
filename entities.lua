@@ -1,5 +1,5 @@
 require 'dokidoki.module'
-[[ make_player, make_weapon, make_player_controller, make_pyx ]]
+[[ make_player, make_weapon, make_player_controller, make_pyx, make_void ]]
 
 import 'gl'
 
@@ -88,7 +88,7 @@ function make_bullet(game, pos_, vel)
   self.pos = pos_
   self.angle = 0
   self.poly = collision.make_rectangle(4, 4)
-  self.tags = {'entity'}
+  self.tags = {'entity', 'player_bullet'}
 
   local life = 20
 
@@ -100,6 +100,10 @@ function make_bullet(game, pos_, vel)
   end
 
   function self.handle_collision(norm)
+    self.is_dead = true
+  end
+
+  function self.hit()
     self.is_dead = true
   end
 
@@ -155,6 +159,8 @@ function make_pyx (game, pos_)
   local vel = v2(0, 0)
   local follow = false
   local excited_counter = 0
+  local glow_brightness = 0.5
+  local glow_angle = math.random() * 360
 
   function self.update()
     local player = game.get_actors_by_tag('player')[1]
@@ -191,6 +197,19 @@ function make_pyx (game, pos_)
     end
 
     self.pos = self.pos + vel
+
+    glow_brightness = (glow_brightness + math.random()) / 2
+  end
+
+  function self.draw_glow()
+    local opacity = (0.8 + excited_counter * 0.2) * glow_brightness
+    glColor4d(1, 1, 1, opacity)
+    glRotated(glow_angle, 0, 0, 1)
+    game.resources.pyx_glow:draw()
+    glScaled(2, 2, 1)
+    glColor4d(1, 1, 1, opacity/4)
+    game.resources.pyx_glow:draw()
+    glColor4d(1, 1, 1, 1)
   end
 
   function self.draw()
@@ -215,6 +234,119 @@ function make_pyx (game, pos_)
     if v2.dot(vel, norm) < 0 then
       vel = vel - 1.5 * v2.project(vel, norm)
     end
+  end
+
+  return self
+end
+
+---- Voids --------------------------------------------------------------------
+function make_void(game, _pos)
+  local self = {}
+  self.pos = _pos
+  self.angle = 0
+  self.poly = collision.make_rectangle(16, 16)
+  self.tags = {'entity', 'enemy'}
+
+  local accel = v2(0, 0)
+  local vel = v2(0, 0)
+  local darkness_cooldown = 0
+
+  local hp = 10
+
+  function self.update()
+    accel = (accel * 0.7 + util.random_v2() * 0.3) / 2
+    vel = (vel + accel) * 0.99
+    self.pos = self.pos + vel
+
+    local player = game.get_actors_by_tag('player')[1]
+    if player and v2.sqrmag(player.pos - self.pos)
+         < constants.room_width * constants.room_width then
+      darkness_cooldown = darkness_cooldown - 1
+    end
+
+    if darkness_cooldown <= 0 then
+      game.add_actor(make_void_darkness(game, self.pos))
+      darkness_cooldown = darkness_cooldown + 20
+    end
+
+  end
+
+  function self.hit()
+    hp = hp - 1
+    if hp <= 0 then
+      self.is_dead = true
+    end
+  end
+
+  function self.draw()
+    glColor3d(0, 0, 0)
+    glBegin(GL_QUADS)
+    glVertex2d(-7, -9)
+    glVertex2d( 9, -7)
+    glVertex2d( 7,  9)
+    glVertex2d(-9,  7)
+    glEnd()
+    glColor3d(1, 1, 1)
+  end
+
+  function self.handle_collision(norm)
+    if v2.dot(vel, norm) < 0 then
+      vel = vel - v2.project(vel, norm)
+    end
+  end
+
+  return self
+end
+
+function make_void_darkness(game, _pos)
+  local self = {}
+  self.pos = _pos
+
+  local life = 60
+  local particle_cooldown = 0
+
+  function self.update()
+    life = life - 1
+    if life == 0 then self.is_dead = true end
+
+    self.pos = self.pos + util.random_v2() * 20
+
+    particle_cooldown = particle_cooldown - 1
+    if particle_cooldown <= 0 then
+      game.add_actor(make_void_darkness_particle(game, self.pos))
+      particle_cooldown = particle_cooldown + 10
+    end
+  end
+
+  function self.draw()
+  end
+
+  return self
+end
+
+function make_void_darkness_particle(game, _pos)
+  local self = {}
+  self.pos = _pos
+
+  local life = 120
+
+  function self.update()
+    life = life - 1
+    if life <= 0 then
+      self.is_dead = true
+    end
+  end
+
+  function self.draw_dark()
+    glColor4d(1, 1, 1, life/120 * 0.4)
+    game.resources.darkness_big:draw()
+    glColor4d(1, 1, 1, 1)
+  end
+
+  function self.draw()
+    glColor4d(1, 1, 1, life/120 * 0.4)
+    game.resources.darkness_small:draw()
+    glColor4d(1, 1, 1, 1)
   end
 
   return self

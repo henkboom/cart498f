@@ -14,7 +14,7 @@ function random_v2()
 end
 
 function gl_setup()
-    glClearColor(0.25, 0.25, 0.25, 0)
+    glClearColor(0.2, 0.2, 0.2, 0)
     glClear(GL_COLOR_BUFFER_BIT)
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -36,7 +36,7 @@ function make_following_camera (game, actor)
 
     local center = v2(math.floor(v.x/rw) * rw + rw/2,
                       math.floor(v.y/rh) * rh + rh/2)
-    return center * 0.7 + v * 0.3
+    return center * 0.6 + v * 0.4
   end
 
   function self.post_update ()
