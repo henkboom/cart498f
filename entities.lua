@@ -1,5 +1,6 @@
 require 'dokidoki.module'
-[[ make_player, make_weapon, make_player_controller, make_pyx, make_void ]]
+[[ make_player, make_weapon, make_player_controller, make_pyx, make_void,
+   make_filler ]]
 
 import 'gl'
 
@@ -10,10 +11,10 @@ local constants = require 'constants'
 local util = require 'util'
 
 ---- Player -------------------------------------------------------------------
-function make_player(game, controller)
+function make_player(game, controller, _pos)
   local self = {}
 
-  self.pos = v2(constants.room_width * 2.5, constants.room_height/2)
+  self.pos = _pos
   self.angle = 0
   self.poly = collision.make_rectangle(6, 6)
   self.tags = {'player', 'entity'}
@@ -24,7 +25,7 @@ function make_player(game, controller)
 
   function self.update()
     if not weapon then
-      weapon = weapon or make_weapon(game, self, controller)
+      weapon = make_weapon(game, self, controller)
       game.add_actor(weapon)
     end
 
@@ -348,6 +349,201 @@ function make_void_darkness_particle(game, _pos)
     game.resources.darkness_small:draw()
     glColor4d(1, 1, 1, 1)
   end
+
+  return self
+end
+
+---- Fillers ------------------------------------------------------------------
+
+function make_filler(game, _pos)
+  local self = {}
+  self.pos = _pos
+  self.angle = 0
+  self.poly = collision.make_rectangle(20, 20)
+  self.tags = {'entity', 'enemy'}
+
+  local hp = 10
+
+  local s_waiting, s_firing, s_reinforcing
+  local state
+
+  local max_defenders = 25
+  local defenders = setmetatable({}, {__mode = "k"})
+
+  do -- s_waiting
+    local wait_left
+    local defense_check_cooldown = 0
+
+    function s_waiting ()
+      wait_left = wait_left and wait_left - 1 or 180
+
+      if wait_left == 0 then
+        if defense_check_cooldown == 0 then
+          local defender_count = 0
+          for d in pairs(defenders) do
+            if not d.is_dead then defender_count = defender_count + 1 end
+          end
+          if defender_count < max_defenders then
+            state = s_reinforcing
+          end
+          defense_check_cooldown = 3
+          wait_left = nil
+        else
+          defense_check_cooldown = defense_check_cooldown - 1
+          state = s_firing
+          wait_left = nil
+        end
+      end
+    end
+  end
+
+  do -- s_firing
+    local fire_rotation = 0
+    local cooldown = 0
+    local burst_count = nil
+
+    function s_firing()
+      burst_count = burst_count or 10
+
+      if burst_count == 0 then
+        burst_count = nil
+        state = s_waiting
+      else
+        if cooldown ~= 0 then cooldown = cooldown - 1 end
+        if cooldown == 0 then
+          for i = 1, 2 do
+            game.add_actor(make_filler_attacker(
+              game, self.pos, v2.unit(fire_rotation) * 4))
+            fire_rotation = fire_rotation + math.pi + math.pi/18
+          end
+          cooldown = cooldown + 5
+          burst_count = burst_count - 1
+        end
+      end
+    end
+  end
+
+  do -- s_reinforcing
+    local cooldown
+    local number_to_fire
+
+    function s_reinforcing()
+      if not number_to_fire then
+        number_to_fire = max_defenders
+        for d in pairs(defenders) do
+          if not d.is_dead then
+            number_to_fire = number_to_fire - 1
+          end
+        end
+      end
+
+      cooldown = cooldown and cooldown - 1 or 10
+
+      if cooldown == 0 then
+        local d = make_filler_defender(
+          game,
+          self.pos,
+          v2.unit(math.random() * math.pi * 2) * (3 + 2 * math.random()))
+        game.add_actor(d)
+        defenders[d] = true
+        number_to_fire = number_to_fire - 1
+        cooldown = nil
+      end
+
+      if number_to_fire == 0 then
+        number_to_fire = nil
+        state = s_waiting
+      end
+    end
+  end
+
+  state = s_waiting
+
+  function self.update()
+    state()
+  end
+
+  function self.draw()
+    glScaled(20, 20, 1)
+    game.resources.debug_box:draw()
+  end
+
+  function self.hit()
+    hp = hp - 1
+    if hp == 0 then self.is_dead = true end
+  end
+
+  function self.handle_collision()
+  end
+
+  return self
+end
+
+function make_filler_attacker(game, _pos, vel)
+  local self = {}
+  self.pos = _pos
+  self.angle = 0
+  self.poly = collision.make_rectangle(10, 10)
+  self.tags = {'entity', 'enemy'}
+
+  local offset = util.random_v2() * 10
+
+  function self.update()
+    local target_actor = game.get_actors_by_tag('player')[1]
+    if target_actor and target_actor.pos ~= self.pos then
+      local distance = v2.mag(target_actor.pos - self.pos)
+      local target = target_actor.pos + offset * distance / 20
+
+      local target_vel = v2.norm(target - self.pos)*(1+math.random()*3)
+      vel = vel * 0.95 + target_vel * 0.05
+      self.pos = self.pos + vel
+    end
+  end
+
+  function self.draw()
+    glScaled(10, 10, 1)
+    game.resources.debug_box:draw()
+  end
+
+  function self.handle_collision()
+  end
+
+  function self.hit()
+    self.is_dead = true
+  end
+
+  return self
+end
+
+function make_filler_defender(game, _pos, vel)
+  local self = {}
+  self.pos = _pos
+  self.angle = 0
+  self.poly = collision.make_rectangle(15, 15)
+  self.tags = {'entity', 'enemy'}
+
+  local timer = 40
+
+  function self.update()
+    self.pos = self.pos + vel
+    timer = timer - 1
+    if timer >= 0 then
+      vel = vel * timer / (timer + 1)
+    end
+  end
+
+  function self.draw()
+    glScaled(15, 15, 1)
+    game.resources.debug_box:draw()
+  end
+
+  function self.handle_collision()
+  end
+
+  function self.hit()
+    self.is_dead = true
+  end
+
 
   return self
 end

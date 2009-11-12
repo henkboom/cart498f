@@ -55,10 +55,14 @@ function init (game)
     end,
   }
 
+  local player_pos = v2(constants.room_width * 2.5, constants.room_height/2)
+
   local player_controller = entities.make_player_controller(game)
-  local player = entities.make_player(game, player_controller)
+  local player = entities.make_player(game, player_controller, player_pos)
   game.add_actor(player_controller)
   game.add_actor(player)
+
+  game.add_actor(entities.make_filler(game, player_pos + v2(100, 100)))
 
   game.add_actor(util.make_following_camera(game, player))
 

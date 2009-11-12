@@ -146,7 +146,9 @@ function make_floor_actor(game, pos, sprite)
   self.pos = pos
 
   function self.draw_terrain()
+    glColor4d(1, 1, 1, 0.5)
     sprite:draw()
+    glColor4d(1, 1, 1, 1)
   end
 
   return self
