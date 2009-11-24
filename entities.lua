@@ -7,7 +7,7 @@ import 'gl'
 local collision = require 'collision'
 local v2 = require 'dokidoki.v2'
 
-local constants = require 'constants'
+local C = require 'constants'
 local util = require 'util'
 
 ---- Player -------------------------------------------------------------------
@@ -261,7 +261,7 @@ function make_void(game, _pos)
 
     local player = game.get_actors_by_tag('player')[1]
     if player and v2.sqrmag(player.pos - self.pos)
-         < constants.room_width * constants.room_width then
+         < C.room_width * C.room_width then
       darkness_cooldown = darkness_cooldown - 1
     end
 

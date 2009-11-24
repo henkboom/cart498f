@@ -7,7 +7,7 @@ import 'dokidoki.base'
 local collision = require 'collision'
 local v2 = require 'dokidoki.v2'
 
-local constants = require 'constants'
+local C = require 'constants'
 local entities = require 'entities'
 
 function load_level(game, level)
@@ -49,23 +49,23 @@ function add_area (game, pos, x_cells, y_cells)
   for i = 1, x_cells do
     for j = 1, y_cells do
       add_room(game,
-               pos + v2((i-1) * constants.room_width,
-                        (j-1) * constants.room_height),
+               pos + v2((i-1) * C.room_width,
+                        (j-1) * C.room_height),
                cells[i][j]);
     end
   end
 end
 
-vert_wall = collision.make_rectangle(constants.wall_thickness, constants.room_height + constants.wall_thickness)
-horiz_wall = collision.make_rectangle(constants.room_width + constants.wall_thickness, constants.wall_thickness)
+vert_wall = collision.make_rectangle(C.wall_thickness, C.room_height + C.wall_thickness)
+horiz_wall = collision.make_rectangle(C.room_width + C.wall_thickness, C.wall_thickness)
 
-vert_half_wall = collision.make_rectangle(constants.wall_thickness, constants.room_height / 2 - constants.wall_thickness)
-horiz_half_wall = collision.make_rectangle(constants.room_width / 2 - constants.wall_thickness, constants.wall_thickness)
+vert_half_wall = collision.make_rectangle(C.wall_thickness, C.room_height / 2 - C.wall_thickness)
+horiz_half_wall = collision.make_rectangle(C.room_width / 2 - C.wall_thickness, C.wall_thickness)
 
 function add_wall(game, pos, type, orientation)
-  local rw = constants.room_width
-  local rh = constants.room_height
-  local wt = constants.wall_thickness
+  local rw = C.room_width
+  local rh = C.room_height
+  local wt = C.wall_thickness
 
   if type == 'wall' then
     if orientation == 'horiz' then
@@ -91,8 +91,8 @@ function add_wall(game, pos, type, orientation)
 end
 
 function add_room(game, pos, sides)
-  local rw = constants.room_width
-  local rh = constants.room_height
+  local rw = C.room_width
+  local rh = C.room_height
 
   local pyx_count = math.random(-4, 0);
 

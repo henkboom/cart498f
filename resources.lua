@@ -1,7 +1,7 @@
 local g = require 'dokidoki.graphics'
-local c = require 'constants'
+local C = require 'constants'
 
-local room_size = {c.room_width, c.room_height}
+local room_size = {C.room_width, C.room_height}
 
 return {
   room_backgrounds = {

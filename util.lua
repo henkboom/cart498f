@@ -7,7 +7,7 @@ import 'glu'
 local collision = require 'collision'
 local v2 = require 'dokidoki.v2'
 
-local constants = require 'constants'
+local C = require 'constants'
 
 function random_v2()
   return v2.unit(math.random() * 2 * math.pi) * math.sqrt(math.random())
@@ -20,7 +20,7 @@ function gl_setup()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    glOrtho(0, constants.width, 0, constants.height, 1, -1)
+    glOrtho(0, C.width, 0, C.height, 1, -1)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     glColor3d(1, 1, 1)
@@ -31,8 +31,8 @@ function make_following_camera (game, actor)
   local pos = actor.pos
 
   local function clamped(v)
-    local rw = constants.room_width
-    local rh = constants.room_height
+    local rw = C.room_width
+    local rh = C.room_height
 
     local center = v2(math.floor(v.x/rw) * rw + rw/2,
                       math.floor(v.y/rh) * rh + rh/2)
@@ -44,7 +44,7 @@ function make_following_camera (game, actor)
   end
 
   function self.draw_setup ()
-    glTranslated(constants.width/2 - pos.x, constants.height/2 - pos.y, 0)
+    glTranslated(C.width/2 - pos.x, C.height/2 - pos.y, 0)
   end
 
   return self

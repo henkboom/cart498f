@@ -8,7 +8,7 @@ local kernel = require 'dokidoki.kernel'
 local v2 = require 'dokidoki.v2'
 
 local collision = require 'collision'
-local constants = require 'constants'
+local C = require 'constants'
 local entities = require 'entities'
 local game = require 'game'
 local level = require 'level'
@@ -22,7 +22,7 @@ draw_phases = {'draw_setup', 'draw_dark', 'draw_glow', 'draw_terrain', 'draw'}
 
 
 function init_mouse_input(game)
-  local center = v2(constants.width/2, constants.height/2)
+  local center = v2(C.width/2, C.height/2)
 
   local mouse_movement = v2(0, 0)
   
@@ -84,7 +84,7 @@ function init (game)
   init_mouse_input(game)
   init_collision(game)
 
-  local player_pos = v2(constants.room_width * 2.5, constants.room_height/2)
+  local player_pos = v2(C.room_width * 2.5, C.room_height/2)
 
   local player_controller = entities.make_player_controller(game)
   local player = entities.make_player(game, player_controller, player_pos)
@@ -98,7 +98,7 @@ function init (game)
   level.add_area(game, v2(0, 0), 5, 5)
 end
 
-kernel.set_video_mode(constants.width, constants.height)
-kernel.set_ratio(constants.width/constants.height)
+kernel.set_video_mode(C.width, C.height)
+kernel.set_ratio(C.width/C.height)
 kernel.start_main_loop(
   actor_scene.make_actor_scene(update_phases, draw_phases, init))
