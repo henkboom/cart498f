@@ -1,5 +1,5 @@
 require 'dokidoki.module'
-[[ random_v2, gl_setup, make_following_camera, make_collision_index ]]
+[[ random_v2, make_following_camera, make_collision_index ]]
 
 import 'gl'
 import 'glu'
@@ -11,19 +11,6 @@ local C = require 'constants'
 
 function random_v2()
   return v2.unit(math.random() * 2 * math.pi) * math.sqrt(math.random())
-end
-
-function gl_setup()
-    glClearColor(0.2, 0.2, 0.2, 0)
-    glClear(GL_COLOR_BUFFER_BIT)
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    glOrtho(0, C.width, 0, C.height, 1, -1)
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
-    glColor3d(1, 1, 1)
 end
 
 function make_following_camera (game, actor)

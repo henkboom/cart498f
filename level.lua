@@ -106,12 +106,12 @@ function add_room(game, pos, sides)
     if sides[i] == 'wall' then pyx_count = pyx_count + 2 end
   end
 
-  for i = 1, pyx_count do
-    game.add_actor(entities.make_pyx(
-      game,
-      pos + v2(math.random(rw/3, 2*rw/3), math.random(rh/3, 2*rh/3))))
-  end
-  game.add_actor(entities.make_void(game, pos + v2(rw/2, rh/2)))
+  --for i = 1, pyx_count do
+  --  game.add_actor(entities.make_pyx(
+  --    game,
+  --    pos + v2(math.random(rw/3, 2*rw/3), math.random(rh/3, 2*rh/3))))
+  --end
+  --game.add_actor(entities.make_void(game, pos + v2(rw/2, rh/2)))
 end
 
 function iterate_passages(edges)

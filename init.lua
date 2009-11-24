@@ -10,7 +10,6 @@ local v2 = require 'dokidoki.v2'
 local collision = require 'collision'
 local C = require 'constants'
 local entities = require 'entities'
-local game = require 'game'
 local level = require 'level'
 local util = require 'util'
 
@@ -20,17 +19,42 @@ import(require 'glu')
 update_phases = {'pre_update', 'update', 'collision_check', 'post_update'}
 draw_phases = {'draw_setup', 'draw_dark', 'draw_glow', 'draw_terrain', 'draw'}
 
+function init_drawing(game)
+  game.add_actor{
+    draw_setup = function ()
+      glClearColor(0.2, 0.2, 0.2, 0)
+      glClear(GL_COLOR_BUFFER_BIT)
+      glEnable(GL_BLEND)
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+      glMatrixMode(GL_PROJECTION)
+      glLoadIdentity()
+      glOrtho(0, C.width, 0, C.height, 1, -1)
+      glMatrixMode(GL_MODELVIEW)
+      glLoadIdentity()
+      glColor3d(1, 1, 1)
+    end,
+    draw_glow = function ()
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+    end,
+    draw_terrain = function ()
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    end,
+  }
+end
 
 function init_mouse_input(game)
-  local center = v2(C.width/2, C.height/2)
+  local center
 
   local mouse_movement = v2(0, 0)
   
   game.add_actor{
     pre_update = function ()
-      mouse_movement = v2(glfw.GetMousePos()) - center
+      if center then
+        mouse_movement = v2(glfw.GetMousePos()) - center
+        print(mouse_movement)
+      end
+      center = v2(kernel.get_width()/2, kernel.get_height()/2)
       glfw.SetMousePos(center.x, center.y)
-      print(mouse_movement)
     end
   }
 end
@@ -63,14 +87,6 @@ function init_collision(game)
         end
       end
     end,
-
-    draw_setup = util.gl_setup,
-    draw_glow = function ()
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE)
-    end,
-    draw_terrain = function ()
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    end,
   }
 end
 
@@ -81,6 +97,7 @@ function init (game)
 
   game.resources = require 'resources'
 
+  init_drawing(game)
   init_mouse_input(game)
   init_collision(game)
 
